@@ -1,0 +1,108 @@
+import { create } from "zustand";
+import { axiosinstance } from "./axiosinstance";
+import { useauthstore } from "./useauthstore";
+
+import { getSharedAESKey } from "../utils/chatkey";
+import { decryptWithAES, encryptWithAES } from "../utils/crypto";
+import toast from "react-hot-toast";
+
+export const useChatStore=create((set,get)=>({
+    messages:[],
+    users:[],
+selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
+    isUsersloading:false,
+    isMessagesloading:false,
+
+    getUsers:async()=>{
+        set({isUsersloading:true})
+        try {
+            const res=await axiosinstance.get("/user/allfrnds")
+            set({users:res.data})
+        } catch (error) {
+            console.log(error)
+        }
+        finally{
+            set({isUsersloading:false})
+        }
+    },
+  getmessages: async (id) => {
+    set({ isMessagesloading: true });
+
+    try {
+      const res = await axiosinstance.get(`/chat/${id}`);
+      const myId = useauthstore.getState().authUser._id;
+
+      const aesKey = await getSharedAESKey(myId, id);
+
+      const decrypted = await Promise.all(
+        res.data.map(async (msg) => {
+          if (!msg.cipherText) return msg;
+
+          const text = await decryptWithAES(msg, aesKey);
+          return { ...msg, text };
+        })
+      );
+
+set({
+  messages: decrypted.filter(
+    (msg) => msg && msg.senderId
+  ),
+});
+    } finally {
+      set({ isMessagesloading: false });
+    }
+  },
+
+  // 🔥 SEND MESSAGE
+  sendmessages: async (text, image, socket) => {
+
+    const { selecteduser, messages } = get();
+    const myId = useauthstore.getState().authUser._id;
+
+    const aesKey = await getSharedAESKey(myId, selecteduser._id);
+
+    let encrypted = null;
+    if (text?.trim()) {
+      encrypted = await encryptWithAES(text, aesKey);
+    }
+
+    const payload = {
+      ...encrypted,
+      image: image || null,
+    };
+
+    const saved = await axiosinstance.post(
+      `/chat/send/${selecteduser._id}`,
+      payload
+    );
+
+    set({
+      messages: [...messages, { ...saved.data, text }],
+    });
+  },
+
+  
+   setselecteduser: (user) => {
+    localStorage.setItem("selectedUser", JSON.stringify(user));
+    set({ selecteduser: user });
+  },
+
+
+
+  clearSelectedUser: () => {
+  localStorage.removeItem("selectedUser");
+   set({ selecteduser: null });
+   },
+
+     attachSocketListeners: (socket) => {
+    if (!socket) return;
+
+    socket.off("friend:update");
+
+    socket.on("friend:update", async () => {
+      await get().getUsers();
+    });
+  },
+
+  }))
+

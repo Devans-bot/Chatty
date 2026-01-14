@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  body {
+    @apply bg-base-100 text-base-content;
+  }
+}
+/* Hide scrollbar for Chrome, Safari, Edge */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.hide-scrollbar {
+  scrollbar-width: none;
+}

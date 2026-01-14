@@ -1,0 +1,219 @@
+import { ChartBar, Loader, X, Download } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import Chatbar from './chatbar'
+import Inputbox from './input'
+import { useChatStore } from '../store/usechatstore'
+import { useauthstore } from '../store/useauthstore'
+
+
+const Chatcontainer = () => {
+  const { messages, selecteduser, getmessages, isMessagesloading } = useChatStore()
+  const { authUser ,socket} = useauthstore()
+  const messagesContainerRef = useRef(null)
+  const [previewImage, setPreviewImage] = useState(null)
+
+  
+  const scrollToBottom = () => {
+    const el = messagesContainerRef.current
+    if (!el) return
+
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight
+    })
+  }
+
+  useEffect(() => {
+    if (!isMessagesloading) {
+      scrollToBottom()
+    }
+  }, [isMessagesloading])
+
+
+
+useEffect(() => {
+  if (selecteduser?._id) {
+    getmessages(selecteduser._id);
+  }
+}, [selecteduser?._id]);
+
+
+useEffect(() => {
+  if (!socket || !authUser || !selecteduser) return;
+
+  const handleReceiveMessage = async (msg) => {
+    if (!msg || !msg.senderId) return;
+
+    // ✅ FILTER: message must belong to current chat
+    const isCurrentChat =
+      msg.senderId === selecteduser._id ||
+      msg.receiverId === selecteduser._id;
+
+    if (!isCurrentChat) return; // 🔥 THIS WAS MISSING
+
+    let finalMessage = msg;
+
+    // 🔐 decrypt if needed
+    if (msg.cipherText && !msg.text) {
+      try {
+        const { getSharedAESKey } = await import("../utils/chatkey");
+        const { decryptWithAES } = await import("../utils/crypto");
+
+        const aesKey = await getSharedAESKey(authUser._id, msg.senderId);
+        const text = await decryptWithAES(msg, aesKey);
+
+        finalMessage = { ...msg, text };
+      } catch (err) {
+        console.error("Decrypt failed:", err);
+      }
+    }
+
+    useChatStore.setState((state) => ({
+      messages: [...state.messages, finalMessage],
+    }));
+  };
+
+  socket.on("receiveMessage", handleReceiveMessage);
+  return () => socket.off("receiveMessage", handleReceiveMessage);
+}, [socket, authUser?._id, selecteduser?._id]);
+
+
+  if (isMessagesloading)
+    return (
+      <div className="flex w-full items-center justify-center h-screen">
+        <Loader className="size-10 animate-spin" />
+      </div>
+    )
+
+  const handleClosePreview = () => setPreviewImage(null)
+
+  
+  const downloadImage = async (url) => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+
+    // file name
+    link.download = "chat-image.jpg";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Download failed:", error);
+    alert("Failed to download image");
+  }
+}
+
+
+
+
+  return (
+    <>
+      <div className="w-screen lg:w-8/12 md:w-9/12 flex flex-col pb-32 relative h-screen min-h-0">
+        <Chatbar />
+
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 min-h-0 font-semibold bg-base-100 overflow-y-auto p-4 space-y-4"
+        >
+          {messages.map((message) => (
+            <div
+              key={message._id}
+              className={`chat ${
+                message.senderId === authUser._id ? 'chat-end' : 'chat-start'
+              }`}
+            >
+              {/* Profile pic */}
+              <div className="hidden md:block chat-image avatar">
+                <div className="size-10 rounded-full border">
+                  <img
+                    src={
+                      message.senderId === authUser._id
+                        ? authUser.profilePic || '/avatar.png'
+                        : selecteduser.profilePic || '/avatar.png'
+                    }
+                    alt="profile pic"
+                  />
+                </div>
+              </div>
+
+              <div className="chat-header mb-1"></div>
+
+              {/* Chat bubble */}
+              <div
+                className={`chat-bubble
+                  p-2
+                  text-xs
+                  sm:p-2
+                  sm:text-sm
+                  flex items-center justify-center flex-col
+                  ${
+                    message.senderId === authUser._id
+                      ? 'bg-primary/30 text-base-content/70'
+                      : 'bg-base-200/90 text-base-content/70'
+                  }
+                `}
+              >
+                {message.image && (
+                  <img
+                    src={message.image}
+                    alt="Attachment"
+                    className="lg:w-60 w-24 rounded-md mb-2 cursor-pointer"
+                    onClick={() => setPreviewImage(message.image)} // 🔹 open preview
+                  />
+                )}
+               {message.text && <p>{message.text}</p>}
+                </div>
+            </div>
+          ))}
+        </div>
+
+        <Inputbox />
+      </div>
+
+      {/* 🔹 Full-screen image preview overlay */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={handleClosePreview} // click outside to close
+        >
+          <div
+            className="relative max-w-4xl w-full px-4"
+            onClick={(e) => e.stopPropagation()} // prevent close when clicking image / buttons
+          >
+            <img
+              src={previewImage}
+              alt="Full preview"
+              className="w-full max-h-[80vh] object-contain rounded-lg"
+            />
+
+            {/* Close button */}
+            <button
+              onClick={handleClosePreview}
+              className="absolute top-3 right-3 rounded-full bg-black/70 p-2 text-white hover:bg-black/90"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Download button */}
+           <button
+  onClick={() => downloadImage(previewImage)}
+  className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-gray-900 hover:bg-white"
+>
+  <Download size={16} />
+  Download
+</button>
+
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+export default Chatcontainer

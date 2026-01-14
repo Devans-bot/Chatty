@@ -1,0 +1,182 @@
+import { Cross, Image, Loader, Plus, Send, X } from 'lucide-react'
+import React, { useRef, useState } from 'react'
+import toast from 'react-hot-toast'
+import { useChatStore } from '../store/usechatstore'
+import { useauthstore } from '../store/useauthstore'
+
+// 🔹 Compress a base64 data URL -> smaller base64 JPEG
+const compressDataUrl = (dataUrl, maxWidth = 800, maxHeight = 800, quality = 0.6) => {
+  return new Promise((resolve, reject) => {
+    if (typeof dataUrl !== 'string') {
+      reject(new Error('Invalid data URL'))
+      return
+    }
+
+    const img = new window.Image()
+    img.onload = () => {
+      let { width, height } = img
+
+      const ratio = Math.min(maxWidth / width, maxHeight / height, 1)
+      width *= ratio
+      height *= ratio
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas context not available'))
+        return
+      }
+
+      ctx.drawImage(img, 0, 0, width, height)
+
+      const compressedBase64 = canvas.toDataURL('image/jpeg', quality)
+      resolve(compressedBase64)
+    }
+
+    img.onerror = () => reject(new Error('Image load error'))
+    img.src = dataUrl
+  })
+}
+
+const Inputbox = () => {
+  const { sendmessages ,selecteduser} = useChatStore()
+  const [text, settext] = useState("")
+  const [imagepreview, setimagepreview] = useState(null)   // for UI only
+  const [rawImage, setRawImage] = useState(null)           // original base64 for compression
+  const [imagesending, setimagesending] = useState(false)
+  const fileInputRef = useRef(null)
+  const {socket}=useauthstore()
+
+  // 🔹 Simple, reliable preview (like your original code)
+  const handleimagechange = (e) => { 
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image")
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      return
+    }
+
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64 = reader.result
+      setimagepreview(base64)   // show in UI
+      setRawImage(base64)       // keep original to compress later
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleremove = () => {
+    setimagepreview(null)
+    setRawImage(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const handlesubmit = async (e) => {
+    e.preventDefault()
+
+    if (!text.trim() && !rawImage) return
+
+    try {
+      setimagesending(true)
+      setimagepreview(null)
+
+      let imageToSend = null
+
+      if (rawImage ){
+        try {
+          // 🔹 compress just before sending
+          imageToSend = await compressDataUrl(rawImage, 800, 800, 0.6)
+        } catch (err) {
+          console.error('Compression failed, sending original image', err)
+          imageToSend = rawImage  // fallback so message still sends
+        }
+      }
+
+     await sendmessages(
+  text,
+  imageToSend,
+   socket
+);
+      setimagesending(false)
+      settext("")
+      setimagepreview(null)
+      setRawImage(null)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    } catch (error) {
+      console.error("error sending messages", error)
+      setimagesending(false)
+    }
+  }
+
+  return (
+    <div className='absolute bottom-0 mb-11 md:mb-16 bg-base-100 p-2 w-full pt-3 flex flex-col gap-1 justify-start'>
+
+      {imagepreview && (
+        <div className='h-16 w-16 flex items-center justify-center relative'>
+          <img src={imagepreview} className='rounded-md h-14 w-14 object-cover' alt="" />
+          <button
+            type="button"
+            onClick={handleremove}
+            className='absolute top-0 right-0 h-5 w-5 flex items-center justify-center rounded-full bg-gray-200'
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      { imagesending  && rawImage &&(
+        <div className='h-16 w-16 flex items-center justify-center relative'>
+          <Loader className="size-5 animate-spin" />
+        </div>
+      )}
+
+      <form onSubmit={handlesubmit} className='w-full flex items-center'>
+        <div className='w-full flex items-center gap-3'>
+
+          <input
+            value={text}
+            type="text"
+            onChange={(e)=>settext(e.target.value)}
+            placeholder="Type here"
+            className="input input-bordered focus:outline-none w-10/12 rounded-md"
+          />
+
+          <input
+            type='file'
+            accept='image/*'
+            ref={fileInputRef}
+            className='hidden'
+            onChange={handleimagechange}
+          />
+
+          <button
+            type='button'
+            className={`w-8 h-8 rounded-full bg-primary/70 flex items-center justify-center ${
+              imagepreview ? 'text-green-600' : 'text-black'
+            }`}
+            onClick={() => fileInputRef?.current?.click()}
+          >
+            <Image size={15} />
+          </button>
+
+          <button
+            type='submit'
+            className={`w-8 h-8 rounded-full bg-primary/70 flex items-center justify-center ${
+              imagepreview || text ? 'text-orange-400' : 'text-black'
+            }`}
+          >
+            <Send size={15}/>
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+export default Inputbox
