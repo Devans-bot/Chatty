@@ -28,6 +28,10 @@ router.get("/key/:chatId", async (req, res) => {
 
     const userAData = await User.findById(userA).select("publicKey");
     const userBData = await User.findById(userB).select("publicKey");
+     
+    if (!userAData?.publicKey || !userBData?.publicKey) {
+      return res.status(400).json({ message: "Public key missing" });
+    }
 
     return res.json({
       exists: false,
@@ -54,7 +58,10 @@ router.post("/key", async (req, res) => {
       encryptedKeyForA,
       encryptedKeyForB,
     } = req.body;
-
+      const existing = await ChatKey.findOne({ chatId });
+    if (existing) {
+      return res.json(existing);
+    }
     const saved = await ChatKey.create({
       chatId,
       userA,
