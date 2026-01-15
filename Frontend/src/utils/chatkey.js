@@ -14,10 +14,12 @@ export async function getSharedAESKey(myId, otherUserId) {
   let encryptedKeyBase64;
 
   if (res.data.exists) {
-    encryptedKeyBase64 =
-      myId === res.data.userA
-        ? res.data.encryptedKeyForA
-        : res.data.encryptedKeyForB;
+   encryptedKeyBase64 = res.data.encryptedKeys?.[myId];
+
+if (!encryptedKeyBase64) {
+  throw new Error("No encrypted AES key for this user");
+}
+
   } else {
     // 2️⃣ Generate AES key
     const aesKey = await crypto.subtle.generateKey(

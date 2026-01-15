@@ -29,9 +29,7 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
   getmessages: async (id) => {
      const myId = useauthstore.getState().authUser._id;
      const chatId = [myId, id].sort().join("_");
-     if (get().activeChatId !== chatId) {
-    set({ messages: [], activeChatId: chatId });
-  }
+    
     set({ isMessagesloading: true });
 
     try {
@@ -59,17 +57,25 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
   // 🔥 SEND MESSAGE
   sendmessages: async (text, image, socket) => {
 
-    const { selecteduser, messages } = get();
+    const { selecteduser, messages,activeChatId } = get();
     const myId = useauthstore.getState().authUser._id;
+
+    if(!selecteduser)return
+
     const chatId = [myId, selecteduser._id].sort().join("_");
 
+     if (activeChatId !== chatId) {
+    toast.error("Chat not ready yet");
+    return;
+  } 
 let aesKey;
 try {
   aesKey = await getSharedAESKey(myId, selecteduser._id);
-} catch (err) {
-  toast.error("Encryption not ready yet. Try again.");
-  return;
+} catch {
+  await getSharedAESKey(myId, selecteduser._id); // regenerate
+  aesKey = await getSharedAESKey(myId, selecteduser._id);
 }
+
     let encrypted = null;
     if (text?.trim()) {
       encrypted = await encryptWithAES(text, aesKey);
@@ -91,10 +97,19 @@ try {
   },
 
   
-   setselecteduser: (user) => {
-    localStorage.setItem("selectedUser", JSON.stringify(user));
-    set({ selecteduser: user });
-  },
+  setselecteduser: (user) => {
+  const myId = useauthstore.getState().authUser._id;
+  const chatId = [myId, user._id].sort().join("_");
+
+  localStorage.setItem("selectedUser", JSON.stringify(user));
+
+  set({
+    selecteduser: user,
+    messages: [],
+    activeChatId: chatId,
+  });
+},
+
 
 
 
@@ -115,3 +130,4 @@ try {
 
   }))
 
+s
