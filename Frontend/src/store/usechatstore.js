@@ -57,8 +57,13 @@ set({ messages: decrypted });
     const myId = useauthstore.getState().authUser._id;
     const chatId = [myId, selecteduser._id].sort().join("_");
 
-    const aesKey = await getSharedAESKey(myId, selecteduser._id);
-
+let aesKey;
+try {
+  aesKey = await getSharedAESKey(myId, selecteduser._id);
+} catch (err) {
+  toast.error("Encryption not ready yet. Try again.");
+  return;
+}
     let encrypted = null;
     if (text?.trim()) {
       encrypted = await encryptWithAES(text, aesKey);

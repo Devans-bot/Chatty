@@ -31,11 +31,6 @@ const Chatcontainer = () => {
 
 
 useEffect(() => {
-  if (!selecteduser?._id) return;
-
-  // 🔥 CLEAR OLD CHAT IMMEDIATELY
-  useChatStore.setState({ messages: [] });
-
   getmessages(selecteduser._id);
 }, [selecteduser?._id]);
 
