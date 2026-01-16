@@ -14,19 +14,7 @@ const Chatcontainer = () => {
   const [previewImage, setPreviewImage] = useState(null)
 
   
-  useEffect(() => {
-  if (!selecteduser || !authUser) return;
-
-  const warmUpKey = async () => {
-    try {
-      await getSharedAESKey(authUser._id, selecteduser._id);
-    } catch {
-      // ignore, first message will retry
-    }
-  };
-
-  warmUpKey();
-}, [selecteduser?._id]);
+ 
 
   const scrollToBottom = () => {
     const el = messagesContainerRef.current

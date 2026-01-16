@@ -26,25 +26,31 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
             set({isUsersloading:false})
         }
     },
+
   getmessages: async (id) => {
      const myId = useauthstore.getState().authUser._id;
      const chatId = [myId, id].sort().join("_");
     
+
     set({ isMessagesloading: true });
 
     try {
      
       const res = await axiosinstance.get(`/chat/${chatId}`);
+    const decrypted = await Promise.all(
+  res.data.map(async (msg) => {
+    if (!msg.cipherText) return msg;
+
+    try {
       const aesKey = await getSharedAESKey(myId, id);
+      const text = await decryptWithAES(msg, aesKey);
+      return { ...msg, text };
+    } catch {
+      return msg; 
+    }
+  })
+);
 
-      const decrypted = await Promise.all(
-        res.data.map(async (msg) => {
-          if (!msg.cipherText) return msg;
-
-          const text = await decryptWithAES(msg, aesKey);
-          return { ...msg, text };
-        })
-      );
 
  if (get().activeChatId === chatId) {
       set({ messages: decrypted });
