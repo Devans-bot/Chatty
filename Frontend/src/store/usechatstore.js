@@ -54,7 +54,6 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
     }
   },
 
-  // 🔥 SEND MESSAGE
   sendmessages: async (text, image, socket) => {
 
     const { selecteduser, messages,activeChatId } = get();
@@ -67,13 +66,17 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
      if (activeChatId !== chatId) {
     toast.error("Chat not ready yet");
     return;
-  } 
+   } 
+   console.log(activeChatId)
 let aesKey;
 try {
   aesKey = await getSharedAESKey(myId, selecteduser._id);
 } catch {
-  await getSharedAESKey(myId, selecteduser._id); // regenerate
-  aesKey = await getSharedAESKey(myId, selecteduser._id);
+  if(!aesKey){
+     toast.error("Aes key not found")
+  }else{
+    toast.error("wrong aes key ",aesKey)
+  }
 }
 
     let encrypted = null;
