@@ -69,21 +69,16 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
 
     const chatId = [myId, selecteduser._id].sort().join("_");
 
-     if (activeChatId !== chatId) {
-    toast.error("Chat not ready yet");
-    return;
-   } 
-   console.log(activeChatId)
-let aesKey;
-try {
-  aesKey = await getSharedAESKey(myId, selecteduser._id);
-} catch {
-  if(!aesKey){
-     toast.error("Aes key not found")
-  }else{
-    toast.error("wrong aes key ",aesKey)
+     
+ let aesKey;
+  try {
+    // 🔑 ALWAYS attempt key generation here
+    aesKey = await getSharedAESKey(myId, selecteduser._id);
+  } catch (err) {
+    console.error("AES key error:", err);
+    toast.error("Encryption failed. Reload and try again.");
+    return; // ⛔ STOP execution
   }
-}
 
     let encrypted = null;
     if (text?.trim()) {
