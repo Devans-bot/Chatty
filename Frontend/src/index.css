@@ -12,6 +12,13 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+/* 🚫 Disable mobile input auto-zoom globally */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
 
 /* Hide scrollbar for Firefox */
 .hide-scrollbar {

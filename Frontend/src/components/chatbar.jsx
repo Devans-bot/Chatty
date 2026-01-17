@@ -13,7 +13,7 @@ const Chatbar = () => {
   
 
   return (
-    <div className='sticky top-0 z-10 w-screen md:w-full rounded-b-xl h-16  bg-base-200 shadow-cl 
+    <div className='fixed md:sticky top-12 md:top-0 z-10 w-screen md:w-full rounded-b-xl h-16  bg-base-200 shadow-cl 
 
   flex items-center justify-between pr-3 pl-5   shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3)]
 '>
