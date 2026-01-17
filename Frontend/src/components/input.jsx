@@ -54,7 +54,8 @@ const Inputbox = () => {
   const {socket}=useauthstore()
  const [showEmoji, setShowEmoji] = useState(false);
   const emojiref=useRef()
-  
+  const isMobile = window.innerWidth < 640;
+
   useOutsideClick(emojiref,()=>setShowEmoji(false))
   // 🔹 Simple, reliable preview (like your original code)
   const handleimagechange = (e) => { 
@@ -120,7 +121,7 @@ const Inputbox = () => {
   }
 
   return (
-    <div className=' p-2 w-full pt-3 flex flex-col gap-1 justify-start'>
+    <div className='border-2 border-primary/10 rounded-t-xl px-1 w-full pt-3 flex flex-col gap-1 justify-start'>
 
       {imagepreview && (
         <div className='h-16 w-16 flex items-center justify-center relative'>
@@ -142,17 +143,8 @@ const Inputbox = () => {
       )}
 
       <form onSubmit={handlesubmit} className='w-full flex items-center'>
-        <div className='w-full flex items-center gap-3'>
+        <div className='w-full flex items-center gap-1'>
            
-       
-          <input
-            value={text}
-            type="text"
-            onChange={(e)=>settext(e.target.value)}
-            placeholder="Type here"
-            className="input input-bordered focus:outline-none w-10/12 rounded-md"
-          />
-
           <input
             type='file'
             accept='image/*'
@@ -168,29 +160,48 @@ const Inputbox = () => {
             }`}
             onClick={() => fileInputRef?.current?.click()}
           >
-            <Image size={15} />
+            <Image size={20} />
           </button>
            
-               <button
+
+           <div className='w-10/12 relative'>
+           <button
             type="button"
             onClick={() => setShowEmoji(v => !v)}
-           className="w-8 h-8 rounded-full bg-primary/70 flex items-center justify-center"
-             >
+            className={`absolute right-3 top-1/2 -translate-y-1/2  w-8 h-8 rounded-full bg-primary/70 flex items-center justify-center ${
+              imagepreview ? 'text-green-600' : 'text-black'
+            }`}             >
             <Smile/>
             </button>
-          
+
+       
+          <input
+          autoComplete="off"
+         autoCorrect="off"
+          spellCheck={false}
+           inputMode="text"
+            value={text}
+            type="text"
+            onChange={(e)=>settext(e.target.value)}
+            placeholder="Chat"
+            className="input input-bordered focus:outline-none w-full rounded-xl"
+          />
+           </div>
+         
           
           <button
             type='submit'
-            className={`w-8 h-8 rounded-full bg-primary/70 flex items-center justify-center ${
+            className={`w-12 h-10 rounded-full bg-primary/70 flex items-center justify-center ${
               imagepreview || text ? 'text-orange-400' : 'text-black'
             }`}
           >
-            <Send size={15}/>
+            <Send size={20}/>
           </button>
           {showEmoji && (
-        <div ref={emojiref} className="absolute bottom-16 right-0">
+        <div ref={emojiref} className="absolute bottom-16 right-2">
           <EmojiPicker
+           width={isMobile ? 290 : 340}
+          height={isMobile ? 420 : 500}
             onEmojiClick={(emoji) =>
               settext(prev => prev + emoji.emoji)
             }

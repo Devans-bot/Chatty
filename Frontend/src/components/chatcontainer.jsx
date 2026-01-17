@@ -26,10 +26,8 @@ const Chatcontainer = () => {
   }
 
   useEffect(() => {
-  
-      scrollToBottom()
-    
-  }, [sendLoad])
+       scrollToBottom()
+  }, [messages.length])
 
 
 
