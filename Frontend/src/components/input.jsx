@@ -143,7 +143,7 @@ const Inputbox = () => {
       )}
 
       <form onSubmit={handlesubmit} className='w-full flex items-center'>
-        <div className='w-full flex items-center gap-1'>
+        <div className='w-full flex items-center justify-evenly gap-1'>
            
           <input
             type='file'
@@ -155,8 +155,8 @@ const Inputbox = () => {
 
           <button
             type='button'
-            className={`w-8 h-8 rounded-full bg-primary/70 flex items-center justify-center ${
-              imagepreview ? 'text-green-600' : 'text-black'
+            className={`w-9 h-9 rounded-full bg-primary/70 flex items-center justify-center ${
+              imagepreview ? 'text-green-600' : 'text-base-content'
             }`}
             onClick={() => fileInputRef?.current?.click()}
           >
@@ -164,13 +164,11 @@ const Inputbox = () => {
           </button>
            
 
-           <div className='w-10/12 relative'>
+           <div className='w-9/12 relative'>
            <button
             type="button"
             onClick={() => setShowEmoji(v => !v)}
-            className={`absolute right-3 top-1/2 -translate-y-1/2  w-8 h-8 rounded-full  flex items-center justify-center ${
-              imagepreview ? 'text-green-600' : 'text-black'
-            }`}             >
+            className={`absolute right-3 top-1/2 -translate-y-1/2  w-8 h-8 rounded-full  flex items-center justify-center text-base-content`}             >
             <Smile/>
             </button>
 
@@ -192,16 +190,18 @@ const Inputbox = () => {
           <button
             type='submit'
             className={`w-12 h-10 rounded-full bg-primary/70 flex items-center justify-center ${
-              imagepreview || text ? 'text-orange-400' : 'text-black'
+              imagepreview || text ? 'text-orange-400' : 'text-base-content'
             }`}
           >
             <Send size={20}/>
           </button>
           {showEmoji && (
-        <div ref={emojiref} className="absolute bottom-16 right-2">
+        <div ref={emojiref} className="absolute bottom-20 right-2">
           <EmojiPicker
+           searchDisabled={true}
+           previewConfig={{showPreview:false}}
            width={isMobile ? 290 : 340}
-          height={isMobile ? 420 : 500}
+          height={isMobile ? 380 : 440}
           emojiSize={isMobile ? 40 : 34}
             onEmojiClick={(emoji) =>
               settext(prev => prev + emoji.emoji)
