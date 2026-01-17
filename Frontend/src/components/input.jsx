@@ -121,7 +121,7 @@ const Inputbox = () => {
   }
 
   return (
-    <div className='border-2 border-primary/10 rounded-t-xl px-1 w-full pt-3 flex flex-col gap-1 justify-start'>
+    <div className='border-2 border-primary/10 rounded-t-xl px-2 w-full py-3 flex flex-col gap-1 justify-start'>
 
       {imagepreview && (
         <div className='h-16 w-16 flex items-center justify-center relative'>
@@ -168,7 +168,7 @@ const Inputbox = () => {
            <button
             type="button"
             onClick={() => setShowEmoji(v => !v)}
-            className={`absolute right-3 top-1/2 -translate-y-1/2  w-8 h-8 rounded-full bg-primary/70 flex items-center justify-center ${
+            className={`absolute right-3 top-1/2 -translate-y-1/2  w-8 h-8 rounded-full  flex items-center justify-center ${
               imagepreview ? 'text-green-600' : 'text-black'
             }`}             >
             <Smile/>
@@ -202,6 +202,7 @@ const Inputbox = () => {
           <EmojiPicker
            width={isMobile ? 290 : 340}
           height={isMobile ? 420 : 500}
+          emojiSize={isMobile ? 40 : 34}
             onEmojiClick={(emoji) =>
               settext(prev => prev + emoji.emoji)
             }

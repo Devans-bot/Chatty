@@ -5,6 +5,7 @@ import Inputbox from './input'
 import { useChatStore } from '../store/usechatstore'
 import { useauthstore } from '../store/useauthstore'
 import { getSharedAESKey } from '../utils/chatkey'
+import { getEmojiType, splitTextAndEmojis } from './emojis'
 
 
 const Chatcontainer = () => {
@@ -27,7 +28,7 @@ const Chatcontainer = () => {
 
   useEffect(() => {
        scrollToBottom()
-  }, [messages.length])
+  }, [messages.length,sendLoad])
 
 
 
@@ -120,14 +121,19 @@ useEffect(() => {
 
         <div
           ref={messagesContainerRef}
-          className="flex-1 min-h-0 font-semibold bg-base-100 overflow-y-auto space-y-4"
+          className="flex-1 min-h-0 font-semibold bg-base-100 overflow-y-auto "
         >
-          {messages.map((message) => (
-            <>
+          {messages.map((message) => {
+              const emojiType = getEmojiType(message.text)
+
+              return (
+
+                 <>
+            
             <div
               key={message._id}
-              className={`chat px-4 ${
-                message.senderId === authUser._id ? 'chat-end' : 'chat-start'
+              className={`chat  px-4 ${
+                message.senderId === authUser._id ? 'chat-end' : 'chat-start '
               }`}
             >
               {/* Profile pic */}
@@ -150,7 +156,7 @@ useEffect(() => {
               <div
                 className={`chat-bubble
                   p-2
-                  text-xs
+                  text-sm
                   sm:p-2
                   sm:text-sm
                   flex items-center justify-center flex-col
@@ -169,16 +175,29 @@ useEffect(() => {
                     onClick={() => setPreviewImage(message.image)} // 🔹 open preview
                   />
                 )}
-               {message.text && <p>{message.text}</p>}
-                </div>
+               {message.text && (
+            <p className="text-md md:text-xs leading-[1.4] break-words">
+           {splitTextAndEmojis(message.text).map((part, i) =>
+             /\p{Extended_Pictographic}/u.test(part) ? (
+             <span
+                key={i}
+               className="inline-block text-3xl align-middle mx-[1px]"
+             >
+               {part}
+              </span>
+             ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
+              </p>
+           )}
 
-            </div>
-               <div>
-               
-               </div>
-              
+                </div>
+           </div>
                </>
-          ))}
+              )
+           
+          })}
           {sendLoad && (
   <div className="chat chat-end px-4">
     <div className="chat-bubble text-sm bg-primary/30 text-base-content/70 flex items-center justify-center">
