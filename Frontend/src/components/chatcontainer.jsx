@@ -8,7 +8,7 @@ import { getSharedAESKey } from '../utils/chatkey'
 
 
 const Chatcontainer = () => {
-  const { messages, selecteduser, getmessages, isMessagesloading } = useChatStore()
+  const { messages, selecteduser, getmessages, isMessagesloading,setSendLoad,sendLoad } = useChatStore()
   const { authUser ,socket} = useauthstore()
   const messagesContainerRef = useRef(null)
   const [previewImage, setPreviewImage] = useState(null)
@@ -26,10 +26,10 @@ const Chatcontainer = () => {
   }
 
   useEffect(() => {
-    if (!isMessagesloading) {
+  
       scrollToBottom()
-    }
-  }, [isMessagesloading])
+    
+  }, [sendLoad])
 
 
 
@@ -115,7 +115,6 @@ useEffect(() => {
 
 
 
-
   return (
     <>
       <div className="w-screen lg:w-8/12 md:w-9/12 flex flex-col relative h-full">
@@ -123,9 +122,10 @@ useEffect(() => {
 
         <div
           ref={messagesContainerRef}
-          className="flex-1  min-h-0 font-semibold bg-base-100 overflow-y-auto space-y-4"
+          className="flex-1 min-h-0 font-semibold bg-base-100 overflow-y-auto space-y-4"
         >
           {messages.map((message) => (
+            <>
             <div
               key={message._id}
               className={`chat px-4 ${
@@ -173,13 +173,23 @@ useEffect(() => {
                 )}
                {message.text && <p>{message.text}</p>}
                 </div>
-            </div>
-          ))}
-           <Inputbox />
-        </div>
 
-          
-        
+            </div>
+               <div>
+               
+               </div>
+              
+               </>
+          ))}
+          {sendLoad && (
+  <div className="chat chat-end px-4">
+    <div className="chat-bubble text-sm bg-primary/30 text-base-content/70 flex items-center justify-center">
+      Sending…
+    </div>
+  </div>
+)}        
+        </div>
+        <Inputbox />
       </div>
 
       {/* 🔹 Full-screen image preview overlay */}

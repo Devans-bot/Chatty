@@ -10,9 +10,10 @@ export const useChatStore=create((set,get)=>({
     messages:[],
     users:[],
     activeChatId:null,
-selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
+     selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
     isUsersloading:false,
     isMessagesloading:false,
+    sendLoad:false,
 
     getUsers:async()=>{
         set({isUsersloading:true})
@@ -62,7 +63,7 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
 
   sendmessages: async (text, image, socket) => {
 
-    const { selecteduser, messages,activeChatId } = get();
+    const { selecteduser, messages,activeChatId,setSendLoad } = get();
     const myId = useauthstore.getState().authUser._id;
 
     if(!selecteduser)return
@@ -98,6 +99,8 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
     set({
       messages: [...messages, { ...saved.data, text }],
     });
+    setSendLoad(false)
+
   },
 
   
@@ -114,8 +117,9 @@ selecteduser: JSON.parse(localStorage.getItem("selectedUser")) || null,
   });
 },
 
-
-
+  setSendLoad:(value)=>{
+    set({sendLoad:value})
+  },
 
   clearSelectedUser: () => {
   localStorage.removeItem("selectedUser");

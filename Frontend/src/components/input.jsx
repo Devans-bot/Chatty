@@ -45,7 +45,7 @@ const compressDataUrl = (dataUrl, maxWidth = 800, maxHeight = 800, quality = 0.6
 }
 
 const Inputbox = () => {
-  const { sendmessages ,selecteduser} = useChatStore()
+  const { sendmessages ,selecteduser,setSendLoad} = useChatStore()
   const [text, settext] = useState("")
   const [imagepreview, setimagepreview] = useState(null)   // for UI only
   const [rawImage, setRawImage] = useState(null)           // original base64 for compression
@@ -85,9 +85,9 @@ const Inputbox = () => {
 
   const handlesubmit = async (e) => {
     e.preventDefault()
-
+    
     if (!text.trim() && !rawImage) return
-
+    setSendLoad(true)
     try {
       setimagesending(true)
       setimagepreview(null)
@@ -96,7 +96,6 @@ const Inputbox = () => {
 
       if (rawImage ){
         try {
-          // 🔹 compress just before sending
           imageToSend = await compressDataUrl(rawImage, 800, 800, 0.6)
         } catch (err) {
           console.error('Compression failed, sending original image', err)
@@ -121,7 +120,7 @@ const Inputbox = () => {
   }
 
   return (
-    <div className='absolute bottom-0 mb-11 md:mb-16  p-2 w-full pt-3 flex flex-col gap-1 justify-start'>
+    <div className=' p-2 w-full pt-3 flex flex-col gap-1 justify-start'>
 
       {imagepreview && (
         <div className='h-16 w-16 flex items-center justify-center relative'>
