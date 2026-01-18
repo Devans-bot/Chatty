@@ -15,6 +15,7 @@ export const useChatStore=create((set,get)=>({
     isMessagesloading:false,
     sendLoad:false,
     isopen:false,
+    text:null,
 
     getUsers:async()=>{
         set({isUsersloading:true})
@@ -126,6 +127,12 @@ export const useChatStore=create((set,get)=>({
   setisopen:(value)=>{
     set({isopen:value})
   },
+  
+  settext:(value)=>{
+    set({text:value})
+  },
+
+
 
   clearSelectedUser: () => {
   localStorage.removeItem("selectedUser");

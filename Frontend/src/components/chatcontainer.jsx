@@ -10,7 +10,7 @@ import MonkeyLoader from './monkeyloader'
 
 
 const Chatcontainer = () => {
-  const { messages, selecteduser, getmessages, isMessagesloading,setSendLoad,sendLoad } = useChatStore()
+  const { messages, selecteduser, getmessages, isMessagesloading,setSendLoad,sendLoad,text } = useChatStore()
   const { authUser ,socket} = useauthstore()
   const messagesContainerRef = useRef(null)
   const [previewImage, setPreviewImage] = useState(null)
@@ -202,9 +202,9 @@ useEffect(() => {
            
           })}
           {sendLoad && (
-  <div className="chat chat-end px-4">
-    <div className="chat-bubble text-sm bg-primary/30 text-base-content/70 flex items-center justify-center">
-      Sending…
+  <div className="chat chat-end px-2">
+    <div className=" chat-bubble text-xs bg-primary/30 text-base-content/70 flex items-center justify-center">
+    <p>{text || "....."}</p>
     </div>
   </div>
 )}        

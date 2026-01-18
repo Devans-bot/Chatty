@@ -208,7 +208,7 @@ transition-all duration-200 ease-out
  active:scale-95
  active:translate-y-0 
  md:hover:bg-primary/40 w-12 h-10 rounded-full bg-primary/70 flex items-center justify-center ${
-              imagepreview || text ? 'text-orange-400' : 'text-base-content'
+              imagepreview || text ? 'text-green-600' : 'text-base-content'
             }`}
           >
             <Send size={20}/>

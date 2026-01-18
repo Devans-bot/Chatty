@@ -12,6 +12,7 @@ import Profilepage from './pages/Profilepage'
 import { Toaster } from 'react-hot-toast'
 import { usethemestore } from './store/usethemestore'
 import Userprofile from './pages/Userprofile'
+import MonkeyLoader from './components/monkeyloader'
 
 const App = () => {
 
@@ -40,7 +41,7 @@ const App = () => {
   if(isCheckingAuth && !authUser){
     return(
       <div className="flex items-center justify-center h-screen">
-          <Loader className="size-10 animate-spin" />
+        <MonkeyLoader/>
       </div>
     )
   }
