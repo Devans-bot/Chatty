@@ -39,36 +39,40 @@ useEffect(() => {
 }, [selecteduser?._id]);
 
 
-
 useEffect(() => {
   if (!socket || !authUser || !selecteduser) return;
 
   const handleReceiveMessage = async (msg) => {
-    if (!msg || !msg.senderId) return;
+    if (!msg || !msg.senderId || !msg.chatId) return;
 
-    // ✅ FILTER: message must belong to current chat
-   const currentChatId = [authUser._id, selecteduser._id]
-    .sort()
-    .join("_");
-  if (msg.chatId !== currentChatId) return; // ✅ strict filter
+    // ✅ ensure message belongs to currently open chat
+    const currentChatId = [authUser._id, selecteduser._id]
+      .sort()
+      .join("_");
+
+    if (msg.chatId !== currentChatId) return;
 
     let finalMessage = msg;
 
-    // 🔐 decrypt if needed
+    // 🔐 decrypt only if needed
     if (msg.cipherText && !msg.text) {
       try {
-        const { getSharedAESKey } = await import("../utils/chatkey");
-        const { decryptWithAES } = await import("../utils/crypto");
-        
         const otherUserId =
-        msg.senderId === authUser._id ? msg.receiverId : msg.senderId;
+          msg.senderId === authUser._id
+            ? msg.receiverId
+            : msg.senderId;
 
-        const aesKey = await getSharedAESKey(authUser._id, otherUserId);
+        const chatId = [authUser._id, otherUserId]
+          .sort()
+          .join("_");
+
+        const aesKey = await getSharedAESKey(chatId);
         const text = await decryptWithAES(msg, aesKey);
 
         finalMessage = { ...msg, text };
       } catch (err) {
-        console.error("Decrypt failed:", err);
+        console.error("Realtime decrypt failed:", err);
+        // ❗ keep encrypted message instead of dropping it
       }
     }
 
@@ -80,6 +84,7 @@ useEffect(() => {
   socket.on("receiveMessage", handleReceiveMessage);
   return () => socket.off("receiveMessage", handleReceiveMessage);
 }, [socket, authUser?._id, selecteduser?._id]);
+
 
 
   if (isMessagesloading)
