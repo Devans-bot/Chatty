@@ -67,9 +67,7 @@ export const useauthstore=create((set,get)=>({
     deviceId,
     publicKey: devicePublicKey,
   });
-  if (res.data?.message) {
-  toast.success(res.data.message);
-}
+  
 },
 
 

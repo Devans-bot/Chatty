@@ -87,6 +87,14 @@ useEffect(() => {
 }, [socket, authUser?._id, selecteduser?._id]);
 
 
+
+  if (isMessagesloading)
+    return (
+      <div className="flex w-full items-center justify-center h-screen">
+     <MonkeyLoader text={"Chats are Loading.."} size={"text-5xl"}/>
+      </div>
+    )
+
   const handleClosePreview = () => setPreviewImage(null)
 
   
@@ -116,9 +124,6 @@ useEffect(() => {
 
   return (
     <>
-    {isMessagesloading && messages.length === 0 && (
-  <MonkeyLoader text="Loading chat…" />
-)}
       <div className="w-screen lg:w-8/12 md:w-9/12 flex flex-col relative h-full">
         <Chatbar />
 
