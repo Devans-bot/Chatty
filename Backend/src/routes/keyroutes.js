@@ -73,56 +73,29 @@ router.get("/key/:chatId", Isauth, async (req, res) => {
 
 
 router.post("/key", Isauth, async (req, res) => {
-    console.log("========== CHAT KEY CREATE ==========");
 
   try {
     const { chatId, userA, userB } = req.body;
 
     if (!chatId || !userA || !userB) {
-            console.log("❌ Missing fields");
-
       return res.status(400).json({ message: "Missing fields" });
     }
 
-     console.log("chatId:", chatId);
-    console.log("userA:", userA);
-    console.log("userB:", userB);
-
+  
     const existing = await ChatKey.findOne({ chatId });
-        console.log("existing chatKey:", existing ? "YES" : "NO");
-
     if (existing) return res.json(existing);
 
-    // 🔑 Generate AES chat key
-        console.log("🔑 Generating AES key");
-
     const aesKey = crypto.randomBytes(32);
-        console.log("AES key length:", aesKey.length);
-
-
-    // 🔐 Encrypt for server
-        console.log("🔐 Encrypting AES for server");
 
     const encryptedKeyForServer = encryptForServer(aesKey);
-        console.log("encryptedKeyForServer length:", encryptedKeyForServer.length);
-
-
-    // 🔐 Encrypt for existing devices
-        console.log("🔍 Fetching devices for users");
 
     const devices = await Device.find({
       userId: { $in: [userA, userB] },
       revoked: false,
     });
 
-    console.log("Devices found:", devices.length);
-    devices.forEach(d => {
-      console.log("  deviceId:", d.deviceId);
-      console.log("  has publicKey:", !!d.publicKey);
-    });
 
     if (devices.length === 0) {
-      console.log("❌ No active devices");
       return res.status(400).json({
         message: "No active devices found",
       });
@@ -131,13 +104,9 @@ router.post("/key", Isauth, async (req, res) => {
     const encryptedKeysByDevice = {};
 
     for (const device of devices) {
-            console.log("🔐 Encrypting AES for device:", device.deviceId);
-
      try {
         encryptedKeysByDevice[device.deviceId] =
           encryptWithDevicePublicKey(aesKey, device.publicKey);
-
-        console.log("✅ Encrypted for device:", device.deviceId);
       } catch (e) {
         console.error("❌ Failed encrypting for device:", device.deviceId);
         console.error(e);
@@ -145,10 +114,7 @@ router.post("/key", Isauth, async (req, res) => {
       }
     }
 
-     console.log(
-      "encryptedKeysByDevice keys:",
-      Object.keys(encryptedKeysByDevice)
-    );
+    
     const chatKey = await ChatKey.create({
       chatId,
       userA,
@@ -156,8 +122,7 @@ router.post("/key", Isauth, async (req, res) => {
       encryptedKeysByDevice,
       encryptedKeyForServer,
     });
-       console.log("✅ ChatKey saved:", chatKey._id);
-    console.log("========== CHAT KEY CREATE DONE ==========");
+   
 
     res.status(201).json(chatKey);
   } catch (err) {

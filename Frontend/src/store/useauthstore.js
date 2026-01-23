@@ -42,14 +42,10 @@ export const useauthstore=create((set,get)=>({
 
    registerDevice: async () => {
   const { authUser } = get();
-    console.log("REGISTER DEVICE CALLED, user:", authUser?._id);
 
   if (!authUser?._id) return;
 
   const deviceId = getDeviceId();
-    console.log("DEVICE ID:", deviceId);
-
-
 
   let devicePrivateKey = localStorage.getItem(`devicePrivateKey-${deviceId}`);
   let devicePublicKey = localStorage.getItem(`devicePublicKey-${deviceId}`);
