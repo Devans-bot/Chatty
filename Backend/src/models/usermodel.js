@@ -24,10 +24,6 @@ const userschema =  new mongoose.Schema({
         type:String,
         default:""
     },
-    publicKey:{
-        type:String,
-        required:true,
-    },
     friends:[
         {
             type:mongoose.Schema.Types.ObjectId,

@@ -1,5 +1,5 @@
 import express from 'express'
-import { addfriend,  allfriends,  checkauth, friendRequests, getfriend, getPublicKey, getuserprofile, login, logout, profilepic, removeRequests, sendrequest, signup } from '../controllers/usercontrollers.js'
+import { addfriend,  allfriends,  checkauth, friendRequests, getfriend, getuserprofile, login, logout, profilepic, removeRequests, sendrequest, signup } from '../controllers/usercontrollers.js'
 import { Isauth } from '../utils/isauth.js'
 
 const router=express.Router()
@@ -16,7 +16,6 @@ router.get("/requests",Isauth,friendRequests)
 router.get("/userprofile/:id",Isauth,getuserprofile)
 router.get("/addfriend/:id",Isauth,addfriend)
 router.get("/sendrequest/:id",Isauth,sendrequest)
-router.get("/:id/public-key", Isauth, getPublicKey);
 
 
 export default router

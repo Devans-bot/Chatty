@@ -1,86 +1,70 @@
 import { axiosinstance } from "../store/axiosinstance";
-import { importPublicKey } from "./publickey";
-import { getPrivateKey } from "./privatekey";
 
-const getChatId = (a, b) => [a, b].sort().join("_");
+let creatingChatKey = false;
 
-export async function getSharedAESKey(myId, otherUserId) {
-  const chatId = getChatId(myId, otherUserId);
-  
-  // 1️⃣ Ask backend if AES key already exists
-  const res = await  axiosinstance.get(`/chat/key/${chatId}`);
+export async function getSharedAESKey(chatId) {
+  const deviceId = localStorage.getItem("deviceId");
+  if (!deviceId) throw new Error("Device not registered");
 
-
-  let encryptedKeyBase64;
-
-  if (res.data.exists) {
-    encryptedKeyBase64 =
-      myId === res.data.userA
-        ? res.data.encryptedKeyForA
-        : res.data.encryptedKeyForB;
-  } else {
-    // 2️⃣ Generate AES key
-    const aesKey = await crypto.subtle.generateKey(
-      { name: "AES-GCM", length: 256 },
-      true,
-      ["encrypt", "decrypt"]
-    );
-
-    const rawKey = await crypto.subtle.exportKey("raw", aesKey);
-
-    // 3️⃣ Import both public keys (from backend response)
-    const pubA = await importPublicKey(res.data.publicKeyA);
-    const pubB = await importPublicKey(res.data.publicKeyB);
-
-    // 4️⃣ Encrypt AES key for both users
-    const encryptedForA = await crypto.subtle.encrypt(
-      { name: "RSA-OAEP" },
-      pubA,
-      rawKey
-    );
-
-    const encryptedForB = await crypto.subtle.encrypt(
-      { name: "RSA-OAEP" },
-      pubB,
-      rawKey
-    );
-
-    // 5️⃣ Store encrypted AES key in backend
-    await axiosinstance.post(`/chat/key`, {
-      chatId,
-      userA: myId,
-      userB: otherUserId,
-      encryptedKeyForA: btoa(String.fromCharCode(...new Uint8Array(encryptedForA))),
-      encryptedKeyForB: btoa(String.fromCharCode(...new Uint8Array(encryptedForB))),
+  // 1️⃣ Try fetching key
+  let res;
+  try {
+    res = await axiosinstance.get(`/chat/key/${chatId}`, {
+      headers: { "x-device-id": deviceId },
     });
-
-    encryptedKeyBase64 =
-      myId === res.data.userA
-        ? btoa(String.fromCharCode(...new Uint8Array(encryptedForA)))
-        : btoa(String.fromCharCode(...new Uint8Array(encryptedForB)));
+  } catch (err) {
+    throw new Error("Failed to fetch chat key");
   }
 
-  // 6️⃣ Decrypt AES key locally
-let privateKey;
-try {
-  privateKey = await getPrivateKey(myId);
-} catch (err) {
-  console.error("E2EE error:", err);
-  throw new Error("Missing encryption keys. Cannot decrypt chat.");
-}
+  // 2️⃣ If key does NOT exist → create ONCE
+  if (!res.data.exists) {
+    if (creatingChatKey) {
+      // wait until another call finishes creating
+      await new Promise(resolve => setTimeout(resolve, 200));
+      return getSharedAESKey(chatId);
+    }
 
-let rawKey;
-try {
-  rawKey = await crypto.subtle.decrypt(
-    { name: "RSA-OAEP" },
-    privateKey,
-    Uint8Array.from(atob(encryptedKeyBase64), c => c.charCodeAt(0))
+    creatingChatKey = true;
+    try {
+      await axiosinstance.post("/chat/key", {
+        chatId,
+        userA: chatId.split("_")[0],
+        userB: chatId.split("_")[1],
+      });
+    } finally {
+      creatingChatKey = false;
+    }
+
+    // fetch again AFTER creation
+    return getSharedAESKey(chatId);
+  }
+
+  // 3️⃣ Decrypt AES key
+  const encryptedKey = res.data.encryptedKey;
+
+  const privateKeyBase64 = localStorage.getItem(
+    `devicePrivateKey-${deviceId}`
   );
-} catch (err) {
-  await axiosinstance.delete(`/chat/key/${chatId}`);
-  throw new Error("Corrupted chat key. Regenerating.");
-}
+  if (!privateKeyBase64) throw new Error("Device private key missing");
 
+  const privateKeyBytes = Uint8Array.from(
+    atob(privateKeyBase64),
+    c => c.charCodeAt(0)
+  );
+
+  const devicePrivateKey = await crypto.subtle.importKey(
+    "pkcs8",
+    privateKeyBytes,
+    { name: "RSA-OAEP", hash: "SHA-256" },
+    false,
+    ["decrypt"]
+  );
+
+  const rawKey = await crypto.subtle.decrypt(
+    { name: "RSA-OAEP" },
+    devicePrivateKey,
+    Uint8Array.from(atob(encryptedKey), c => c.charCodeAt(0))
+  );
 
   return crypto.subtle.importKey(
     "raw",

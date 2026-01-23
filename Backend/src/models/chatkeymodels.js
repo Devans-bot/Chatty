@@ -17,14 +17,15 @@ const chatKeySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    encryptedKeyForA: {
-      type: String,
-      required: true,
-    },
-    encryptedKeyForB: {
-      type: String,
-      required: true,
-    },
+   encryptedKeysByDevice: {
+  type: Map,
+  of: String, // base64 encrypted AES key
+},
+encryptedKeyForServer: {
+    type: String,
+    required: true,
+  },
+
   },
   { timestamps: true }
 );

@@ -50,7 +50,7 @@ export const useChatStore=create((set,get)=>({
     if (!msg.cipherText) return msg;
 
     try {
-      const aesKey = await getSharedAESKey(myId, id);
+      const aesKey = await getSharedAESKey(chatId);
       const text = await decryptWithAES(msg, aesKey);
       return { ...msg, text };
     } catch {
@@ -68,9 +68,9 @@ export const useChatStore=create((set,get)=>({
     }
   },
 
-  sendmessages: async (text, image, socket) => {
+  sendmessages: async (text, image) => {
 
-    const { selecteduser, messages,activeChatId,setSendLoad } = get();
+    const { selecteduser, messages,setSendLoad } = get();
     const myId = useauthstore.getState().authUser._id;
 
     if(!selecteduser)return
@@ -81,11 +81,11 @@ export const useChatStore=create((set,get)=>({
  let aesKey;
   try {
     // 🔑 ALWAYS attempt key generation here
-    aesKey = await getSharedAESKey(myId, selecteduser._id);
+    aesKey = await getSharedAESKey(chatId);
   } catch (err) {
-    console.error("AES key error:", err);
+   
     toast.error("Encryption failed. Reload and try again.");
-    return; // ⛔ STOP execution
+    return
   }
 
     let encrypted = null;

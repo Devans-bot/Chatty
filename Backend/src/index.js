@@ -2,6 +2,7 @@ import express from 'express'
  import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import userroutes from './routes/userroutes.js'
+import deviceroutes from './routes/deviceroutes.js'
 import messageroutes from './routes/messageroutes.js'
 import keyroutes from './routes/keyroutes.js'
 import connectDB from './lib/database.js'
@@ -26,6 +27,9 @@ app.use(cookieParser())
 app.use("/api/user",userroutes)
 app.use("/api/chat",messageroutes)
 app.use("/api/chat",keyroutes)
+app.use("/api/device", deviceroutes)
+
+
 
 
 

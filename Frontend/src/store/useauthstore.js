@@ -4,6 +4,8 @@ import toast from "react-hot-toast"
 import {io} from "socket.io-client"
 import { generateKeyPair } from "../utils/generatekey"
 import { useChatStore } from "./usechatstore"
+import { getDeviceId } from "../utils/getdeviceid"
+import { generateDeviceKeyPair } from "../utils/devicekey"
 
 const BASE_URL = window.location.origin
 
@@ -24,10 +26,11 @@ export const useauthstore=create((set,get)=>({
     try {
         const res=await axiosinstance.get("/user/checkauth")
       
-        if (res.data?._id) {
-        set({ authUser: res.data });
-        get().connectSocket();
-       }
+       if (res.data?._id) {
+  set({ authUser: res.data });
+  await get().registerDevice(); // 🔑 REQUIRED
+  get().connectSocket();
+}
     } catch (error) {
         console.log(error)
         set({authUser:null})
@@ -36,33 +39,52 @@ export const useauthstore=create((set,get)=>({
     }
    },
 
+   registerDevice: async () => {
+  const { authUser } = get();
+    console.log("REGISTER DEVICE CALLED, user:", authUser?._id);
+
+  if (!authUser?._id) return;
+
+  const deviceId = getDeviceId();
+    console.log("DEVICE ID:", deviceId);
+
+
+
+  let devicePrivateKey = localStorage.getItem(`devicePrivateKey-${deviceId}`);
+  let devicePublicKey = localStorage.getItem(`devicePublicKey-${deviceId}`);
+
+  if (!devicePrivateKey || !devicePublicKey) {
+    const keys = await generateDeviceKeyPair();
+    devicePrivateKey = keys.privateKey;
+    devicePublicKey = keys.publicKey;
+
+    localStorage.setItem(`devicePrivateKey-${deviceId}`, devicePrivateKey);
+    localStorage.setItem(`devicePublicKey-${deviceId}`, devicePublicKey);
+  }
+
+  const res= await axiosinstance.post("/device/registerdevice", {
+    deviceId,
+    publicKey: devicePublicKey,
+  });
+  if (res.data?.message) {
+  toast.success(res.data.message);
+}
+},
+
+
 signUp: async (data) => {
   set({ isSigningup: true });
   
   try {
-    // 1️⃣ Generate keypair for THIS user
-    const { publicKey, privateKey } = await generateKeyPair();
 
-    // 2️⃣ Signup API (send public key to backend)
-    const res = await axiosinstance.post("/user/signup", {
-      ...data,
-      publicKey,
-    });
+    const res = await axiosinstance.post("/user/signup",data);
 
     const user = res.data.user;
+     
 
-    // 3️⃣ Save auth user
     set({ authUser: user });
+    await get().registerDevice();
 
-    // 4️⃣ 🔐 Store PRIVATE KEY locally (user-scoped)
-    localStorage.setItem(`privateKey-${user._id}`, privateKey);
-    const key = localStorage.getItem(`privateKey-${user._id}`);
-if (!key) {
-  throw new Error("Encryption key missing after signup");
-}
-
-
-    // 5️⃣ Connect socket AFTER keys exist
     get().connectSocket();
 
     toast.success("Account created successfully");
@@ -85,17 +107,11 @@ logIn: async (data) => {
   try {
     // 1️⃣ Login API
     const res = await axiosinstance.post("/user/login", data);
-
     const user = res.data.user;
 
-    // 2️⃣ Set auth user FIRST
     set({ authUser: user });
+    await get().registerDevice();
 
-const key = localStorage.getItem(`privateKey-${user._id}`);
-if (!key) {
-  toast.error("Key not present please log")
-}
-    // 4️⃣ Connect socket AFTER auth + keys
     get().connectSocket();
 
     toast.success("Logged in successfully");

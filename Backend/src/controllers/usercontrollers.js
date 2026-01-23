@@ -6,12 +6,10 @@ import { userSocketMap } from "../utils/socket.js"
 import { io } from "../utils/socket.js"
 
 export const signup =async(req,res)=>{
-        const {email,username,fullName,password,publicKey}=req.body    
+        const {email,username,fullName,password}=req.body    
 
  try {
-         if (!publicKey) {
-       return res.status(400).json({ message: "Public key required" });
-        }
+        
      if(!email || !fullName || !username|| !password )return res.status(400).json({message:"Please give details"})
     
       let user=await User.findOne({email})
@@ -23,7 +21,7 @@ export const signup =async(req,res)=>{
         message:"This username isn't available ! 😔"
     })
 
-const profilePic = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}-${Date.now()}`;
+    const profilePic = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}-${Date.now()}`;
 
      const hashpassword=  await bcrypt.hash(password,10)
      
@@ -33,7 +31,6 @@ const profilePic = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}-
         fullName,
         password:hashpassword,
         profilePic,
-        publicKey,
      })
 
      GenerateToken(user._id,res)
@@ -178,7 +175,7 @@ export const allfriends=async(req,res)=>{
         const userid=req.user._id
      
 
-        const user =await User.findById(userid).populate("friends","fullName profilePic createdAt publicKey")
+        const user =await User.findById(userid).populate("friends","fullName profilePic createdAt ")
         res.json(user.friends)
     } catch (error) {
         console.log(error)
@@ -258,18 +255,6 @@ if (friendSockets) {
     console.log(error);
     return res.status(500).json({ message: "Server error" });
   }
-};
-
-export const getPublicKey = async (req, res) => {
-
-  const user = await User.findById(req.params.id).select("publicKey");
-  if (!user || !user.publicKey) {
-    return res.status(404).json({ message: "Public key not found" });
-  }
-
-  console.log("🔑 Found publicKey:", !!user?.publicKey);
-
-  res.json({ publicKey: user.publicKey });
 };
 
 
